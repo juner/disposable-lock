@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+    "settings": {
+        "eslint.useFlatConfig": true,
+        "editor.formatOnSave": false,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit"
+        },
+        "[typescript]": {
+            "editor.tabSize": 2
+        },
+        "[javascript]": {
+            "editor.tabSize": 2
+        },
+        "[json]": {
+            "editor.tabSize": 2
+        },
+        "[jsonc]": {
+            "editor.tabSize": 2
+        },
+        "explorer.fileNesting.enabled": true,
+        "explorer.fileNesting.patterns": {
+            "*.ts": "${capture}.test.ts",
+            "tsconfig.json": "tsconfig.*.json",
+            "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock"
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "dbaeumer.vscode-eslint",
+            "vitest.explorer",
+            "editorconfig.editorconfig",
+            "usernamehw.errorlens"
+        ]
+    }
+}

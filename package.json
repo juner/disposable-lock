@@ -1,0 +1,60 @@
+{
+  "name": "disposable-lock",
+  "version": "0.0.1",
+  "description": "A disposable lock controller that wraps navigator.locks",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./index.umd.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "test:watch": "vitest watch --coverage",
+    "test": "vitest run --coverage --coverage.reporter=cobertura --coverage.reporter=text",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "build": "vite build && tsc --project tsconfig.build.json && cpx ./package.json dist && cpx README.md dist && cpx LICENSE dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juner/disposable-lock.git"
+  },
+  "keywords": [
+    "Web",
+    "Locks",
+    "Web Locks",
+    "navigator.locks"
+  ],
+  "author": "juners",
+  "license": "MIT",
+  "engines": {
+    "node": "^24.x"
+  },
+  "bugs": {
+    "url": "https://github.com/juner/json-seq-stream/issues"
+  },
+  "homepage": "https://github.com/juner/json-seq-stream#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.14.0",
+    "@eslint/markdown": "^7.5.1",
+    "@stylistic/eslint-plugin": "^5.5.0",
+    "@vitest/coverage-v8": "^4.0.8",
+    "cpx": "^1.2.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "path": "^0.12.7",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.2",
+    "vitest": "^4.0.8"
+  }
+}
