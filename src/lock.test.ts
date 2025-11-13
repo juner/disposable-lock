@@ -130,7 +130,7 @@ describe("simple use", () => {
         expect(lock2.mode).toBeUndefined();
         expect(lock2.release).instanceOf(Function);
         expect(lock2[Symbol.asyncDispose]).instanceOf(Function);
-        expect(lock2.release()).resolves.toBe(false);
+        await expect(lock2.release()).resolves.toBe(false);
       }
     });
   }
@@ -145,8 +145,8 @@ describe("simple use", () => {
           steal: true,
         });
         expect(lock3.name).toBe(name);
-        expect(lock1.release()).resolves.toBe(false);
-        expect(lock3.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBe(false);
+        await expect(lock3.release()).resolves.toBe(true);
         await using lock2 = await lock2Wait;
         expect(lock2.name).toBe(name);
       }
