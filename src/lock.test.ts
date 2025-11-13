@@ -1,5 +1,5 @@
 import { describe, test } from "vitest";
-import lock from ".";
+import { lock } from ".";
 describe("simple use", () => {
   {
     const name = "simple use exclusive lock";
@@ -30,7 +30,7 @@ describe("simple use", () => {
   }
   {
     const name = "exclusive lock";
-    test.concurrent("exclusive lock", async ({expect}) => {
+    test.concurrent("exclusive lock", async ({ expect }) => {
       const { request, query } = lock(name);
       let lock2Wait;
       let counter = 0;
@@ -63,4 +63,35 @@ describe("simple use", () => {
       });
     });
   }
+});
+describe("hard error pattern", () => {
+  const name = "not found navigator.locks";
+  test("not found navigator.locks", async ({ expect }) => {
+    const locks = (globalThis.navigator as unknown as { locks: LockManager }).locks;
+    Object.defineProperty(globalThis.navigator, "locks", {
+      writable: true,
+      value: undefined,
+    });
+    try {
+      expect(() => lock(name)).toThrow("navigator.locks is not found. required options.locks argument.");
+
+      const { request, query } = lock(name, { locks });
+      {
+        await using _ = await request();
+        await expect(query()).resolves.toEqual({
+          held: true,
+          pending: false,
+        });
+      }
+      await expect(query()).resolves.toEqual({
+        held: false,
+        pending: false,
+      });
+    } finally {
+      Object.defineProperty(globalThis.navigator, "locks", {
+        writable: true,
+        value: locks,
+      });
+    }
+  });
 });
