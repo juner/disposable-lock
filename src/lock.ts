@@ -66,7 +66,7 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Releasab
   const { resolve: callbackResolve, promise: callbackPromise } = Promise.withResolvers<Lock | null>();
   // case2: called release
   const { resolve: releaseResolve, promise: releasePromise } = Promise.withResolvers<void>();
-  // case3: locks.request() result
+  // case3: LockManager.request() result
   const { resolve: requestResolve, promise: requestPromise, reject: requestReject } = Promise.withResolvers<void>();
   // #endregion
 
