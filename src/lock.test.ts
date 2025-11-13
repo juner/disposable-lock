@@ -6,8 +6,8 @@ describe("simple use", () => {
     test.concurrent("simple lock", async ({ expect }) => {
       const { request, query } = lock(name);
       await expect(query()).resolves.toEqual({
-        held: false,
-        pending: false,
+        held: undefined,
+        pending: undefined,
       });
 
       {
@@ -17,14 +17,19 @@ describe("simple use", () => {
         expect(l.release).instanceOf(Function);
         expect(l[Symbol.asyncDispose]).instanceOf(Function);
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: false,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
         });
       }
 
       await expect(query()).resolves.toEqual({
-        held: false,
-        pending: false,
+        held: undefined,
+        pending: undefined,
       });
     });
   }
@@ -40,16 +45,34 @@ describe("simple use", () => {
         });
         expect(counter++).toEqual(0);
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: false,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
+          pending: undefined,
         });
         lock2Wait = request({
           mode: "exclusive",
         });
         expect(counter++).toEqual(1);
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: true,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
+          pending: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
         });
         lock2Wait.finally(() => expect(counter++).toEqual(2));
         await lock1.release();
@@ -58,8 +81,8 @@ describe("simple use", () => {
         expect(counter++).toEqual(3);
       }
       await expect(query()).resolves.toEqual({
-        held: false,
-        pending: false,
+        held: undefined,
+        pending: undefined,
       });
     });
   }
@@ -71,10 +94,7 @@ describe("simple use", () => {
         await using lock1 = await request({
           mode: "shared",
         });
-        await expect(query()).resolves.toEqual({
-          held: true,
-          pending: false,
-        });
+        await expect(query()).resolves.toHaveProperty("held")
         await using lock2 = await request({
           mode: "shared",
         });
@@ -84,21 +104,49 @@ describe("simple use", () => {
         });
 
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: true,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "shared",
+              name,
+            }, {
+              clientId: expect.any(String),
+              mode: "shared",
+              name,
+            }
+          ],
+          pending: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
         });
         await expect(lock1.release()).resolves.toBe(true);
         await expect(lock2.release()).resolves.toBe(true);
 
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: false,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
+          pending: undefined,
         });
         await using lock3 = await lock3Wait;
         expect(lock3.name).toBe(name);
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: false,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
+          pending: undefined,
         });
       }
     });
@@ -168,13 +216,19 @@ describe("hard error pattern", () => {
       {
         await using _ = await request();
         await expect(query()).resolves.toEqual({
-          held: true,
-          pending: false,
+          held: [
+            {
+              clientId: expect.any(String),
+              mode: "exclusive",
+              name,
+            }
+          ],
+          pending: undefined,
         });
       }
       await expect(query()).resolves.toEqual({
-        held: false,
-        pending: false,
+        held: undefined,
+        pending: undefined,
       });
     } finally {
       Object.defineProperty(globalThis.navigator, "locks", {
