@@ -65,8 +65,8 @@ describe("simple use", () => {
   }
   {
     const name = "mode:shared";
-    test.concurrent("mode:shared", async ({expect}) => {
-      const {request, query} = lock(name);
+    test.concurrent("mode:shared", async ({ expect }) => {
+      const { request, query } = lock(name);
       {
         await using lock1 = await request({
           mode: "shared",
@@ -82,14 +82,14 @@ describe("simple use", () => {
         const lock3Wait = request({
           mode: "exclusive",
         });
-        
+
         await expect(query()).resolves.toEqual({
           held: true,
           pending: true,
         });
         await expect(lock1.release()).resolves.toBe(true);
         await expect(lock2.release()).resolves.toBe(true);
-        
+
         await expect(query()).resolves.toEqual({
           held: true,
           pending: false,
@@ -105,13 +105,13 @@ describe("simple use", () => {
   }
   {
     const name = "use signal";
-    test.concurrent("use signal", async ({expect}) => {
-      const {request} = lock(name);
+    test.concurrent("use signal", async ({ expect }) => {
+      const { request } = lock(name);
       {
         const controller = new AbortController();
         const signal = controller.signal;
         await using _ = await request();
-        const lock2Wait = request({signal});
+        const lock2Wait = request({ signal });
         controller.abort();
         await expect(lock2Wait).rejects.toThrow("This operation was aborted");
       }
@@ -119,12 +119,12 @@ describe("simple use", () => {
   }
   {
     const name = "ifAvailable:true";
-    test.concurrent("ifAvailable:true", async ({expect}) => {
-      const {request} = lock(name);
+    test.concurrent("ifAvailable:true", async ({ expect }) => {
+      const { request } = lock(name);
       {
         await using _ = await request();
         await using lock2 = await request({
-          ifAvailable:true
+          ifAvailable: true
         });
         expect(lock2.name).toBeUndefined();
         expect(lock2.mode).toBeUndefined();
@@ -136,8 +136,8 @@ describe("simple use", () => {
   }
   {
     const name = "steal:true";
-    test.concurrent("steal:true", async({expect}) => {
-      const {request} = lock(name);
+    test.concurrent("steal:true", async ({ expect }) => {
+      const { request } = lock(name);
       {
         await using lock1 = await request();
         const lock2Wait = request();
