@@ -19,8 +19,7 @@
   "scripts": {
     "test:watch": "vitest watch --coverage",
     "test": "vitest run --coverage --coverage.reporter=cobertura --coverage.reporter=text",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "npx --node-options='--experimental-strip-types' eslint --flag unstable_native_nodejs_ts_config",
     "build": "vite build && tsc --project tsconfig.build.json && cpx ./package.json dist && cpx README.md dist && cpx LICENSE dist"
   },
   "repository": {

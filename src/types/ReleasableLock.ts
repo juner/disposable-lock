@@ -1,4 +1,4 @@
-import type { Releasable } from "./Releasable.js";
+import type { Releasable } from "./Releasable.ts";
 
 /**
  * Represents a successfully acquired lock.

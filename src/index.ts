@@ -1,4 +1,3 @@
-import "./requiredAsyncDispose.js";
-export * from "./lock.js";
-export type * from "./NotHaveLock.js";
-export type * from "./ReleasableLock.js";
+import "./requiredAsyncDispose.ts";
+export * from "./lock.ts";
+export type { NotHaveLock, ReleasableLock } from "./types/indext.ts";

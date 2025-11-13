@@ -1,6 +1,6 @@
-import type { InnerLock } from "./InnerLock.js";
-import type { ReleasableLock } from "./ReleasableLock.js";
-import type { NotHaveLock } from "./NotHaveLock.js";
+import type { InnerLock } from "./types/InnerLock.ts";
+import type { ReleasableLock } from "./types/ReleasableLock.ts";
+import type { NotHaveLock } from "./types/NotHaveLock.ts";
 
 /**
  * Requests a lock with the given name and options.

@@ -94,7 +94,7 @@ describe("simple use", () => {
         await using lock1 = await request({
           mode: "shared",
         });
-        await expect(query()).resolves.toHaveProperty("held")
+        await expect(query()).resolves.toHaveProperty("held");
         await using lock2 = await request({
           mode: "shared",
         });
