@@ -1,1 +1,1 @@
-export * from "./lock";
+export * from "./lock.js";

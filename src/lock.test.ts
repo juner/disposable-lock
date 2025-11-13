@@ -1,5 +1,5 @@
 import { describe, test } from "vitest";
-import { lock } from ".";
+import { lock } from "./index.js";
 describe("simple use", () => {
   {
     const name = "simple use exclusive lock";
