@@ -2,8 +2,8 @@ import { describe, test } from "vitest";
 import { lock } from "./index.js";
 describe("simple use", () => {
   {
-    const name = "simple use exclusive lock";
-    test.concurrent("simple use exclusive lock", async ({ expect }) => {
+    const name = "simple lock";
+    test.concurrent("simple lock", async ({ expect }) => {
       const { request, query } = lock(name);
       await expect(query()).resolves.toEqual({
         held: false,
@@ -29,8 +29,8 @@ describe("simple use", () => {
     });
   }
   {
-    const name = "exclusive lock";
-    test.concurrent("exclusive lock", async ({ expect }) => {
+    const name = "mode:exclusive";
+    test.concurrent("mode:exclusive", async ({ expect }) => {
       const { request, query } = lock(name);
       let lock2Wait;
       let counter = 0;
@@ -61,6 +61,95 @@ describe("simple use", () => {
         held: false,
         pending: false,
       });
+    });
+  }
+  {
+    const name = "mode:shared";
+    test.concurrent("mode:shared", async ({expect}) => {
+      const {request, query} = lock(name);
+      {
+        await using lock1 = await request({
+          mode: "shared",
+        });
+        await expect(query()).resolves.toEqual({
+          held: true,
+          pending: false,
+        });
+        await using lock2 = await request({
+          mode: "shared",
+        });
+        expect(lock2.name).toBe(name);
+        const lock3Wait = request({
+          mode: "exclusive",
+        });
+        
+        await expect(query()).resolves.toEqual({
+          held: true,
+          pending: true,
+        });
+        await expect(lock1.release()).resolves.toBe(true);
+        await expect(lock2.release()).resolves.toBe(true);
+        
+        await expect(query()).resolves.toEqual({
+          held: true,
+          pending: false,
+        });
+        await using lock3 = await lock3Wait;
+        expect(lock3.name).toBe(name);
+        await expect(query()).resolves.toEqual({
+          held: true,
+          pending: false,
+        });
+      }
+    });
+  }
+  {
+    const name = "use signal";
+    test.concurrent("use signal", async ({expect}) => {
+      const {request} = lock(name);
+      {
+        const controller = new AbortController();
+        const signal = controller.signal;
+        await using _ = await request();
+        const lock2Wait = request({signal});
+        controller.abort();
+        await expect(lock2Wait).rejects.toThrow("This operation was aborted");
+      }
+    });
+  }
+  {
+    const name = "ifAvailable:true";
+    test.concurrent("ifAvailable:true", async ({expect}) => {
+      const {request} = lock(name);
+      {
+        await using _ = await request();
+        await using lock2 = await request({
+          ifAvailable:true
+        });
+        expect(lock2.name).toBeUndefined();
+        expect(lock2.mode).toBeUndefined();
+        expect(lock2.release).instanceOf(Function);
+        expect(lock2[Symbol.asyncDispose]).instanceOf(Function);
+        expect(lock2.release()).resolves.toBe(false);
+      }
+    });
+  }
+  {
+    const name = "steal:true";
+    test.concurrent("steal:true", async({expect}) => {
+      const {request} = lock(name);
+      {
+        await using lock1 = await request();
+        const lock2Wait = request();
+        await using lock3 = await request({
+          steal: true,
+        });
+        expect(lock3.name).toBe(name);
+        expect(lock1.release()).resolves.toBe(false);
+        expect(lock3.release()).resolves.toBe(true);
+        await using lock2 = await lock2Wait;
+        expect(lock2.name).toBe(name);
+      }
     });
   }
 });

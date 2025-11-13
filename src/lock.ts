@@ -1,9 +1,7 @@
-if (typeof Symbol.asyncDispose !== "symbol") {
-  (Symbol as { asyncDispose: symbol }).asyncDispose = Symbol.for("Symbol.asyncDispose");
-}
+type Releasable = { release(): Promise<boolean> };
+type NotHaveLock = { name?: undefined, mode?: undefined } & Releasable & AsyncDisposable;
+type RelesableLock = Lock & Releasable & AsyncDisposable;
 
-type NotHaveLock = { name?: undefined, mode?: undefined } & { release(): Promise<void> } & AsyncDisposable;
-type RelesableLock = Lock & { release(): Promise<void> } & AsyncDisposable;
 
 type InnerLock = { locks: LockManager, name: string };
 
@@ -37,22 +35,24 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Relesabl
     promise1,
     promise3
       .then(
-        result => ({ result }),
+        () => null,
         reason => ({ reason })
       ),
   ]);
   if (result && "reason" in result) throw result.reason;
-  const lock = !(result && "result" in result) ? await promise1 : null;
-  if (!lock)
+  const lock = await promise1;
+  if (!lock) {
+    resolve2();
     return {
-      release,
-      [Symbol.asyncDispose]: release,
+      release: notHaveLockRelease,
+      [Symbol.asyncDispose]: noop,
     };
+  }
   return {
     name: lock.name,
     mode: lock.mode,
     release,
-    [Symbol.asyncDispose]: release,
+    [Symbol.asyncDispose]: asyncDispose,
   };
   function callback(lock: Lock | null) {
     resolve1(lock);
@@ -60,8 +60,17 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Relesabl
   }
   function release() {
     resolve2();
-    return promise3;
+    return promise3.then(() => true, () => false);
   }
+  function asyncDispose() {
+    return release().then(() => undefined);
+  }
+}
+function notHaveLockRelease() {
+  return Promise.resolve(false);
+}
+function noop() {
+  return Promise.resolve();
 }
 
 async function query(this: InnerLock) {
