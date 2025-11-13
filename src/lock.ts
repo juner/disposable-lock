@@ -1,4 +1,4 @@
-import type { InnerLock } from "./types/InnerLock.ts";
+import type { InnerLock } from "./types/index.ts";
 import { query } from "./query.js";
 import { request } from "./request.js";
 

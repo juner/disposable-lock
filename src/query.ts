@@ -1,4 +1,4 @@
-import type { InnerLock } from "./types/InnerLock.ts";
+import type { InnerLock } from "./types/index.ts";
 
 /**
  * Queries the current lock state (held and pending) for the given lock name.
