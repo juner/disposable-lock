@@ -134,7 +134,6 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Releasab
    */
   async function asyncDispose(): Promise<void> {
     await release();
-    return undefined;
   }
 }
 
