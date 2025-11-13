@@ -13,7 +13,7 @@ type NotHaveLock = { name?: undefined, mode?: undefined } & Releasable<false> & 
 /**
  * Represents a successfully acquired lock.
  */
-type RelesableLock = Lock & Releasable & AsyncDisposable;
+type ReleasableLock = Lock & Releasable & AsyncDisposable;
 
 /**
  * Internal type used to bind LockManager context with the lock name.
@@ -60,7 +60,7 @@ export function lock(name: string, options?: { locks?: LockManager }) {
  * @param options - LockOptions (mode, ifAvailable, steal, signal, etc.)
  * @returns A promise that resolves to either a ReleasableLock or a NotHaveLock.
  */
-async function request(this: InnerLock, options?: LockOptions): Promise<RelesableLock | NotHaveLock> {
+async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock | NotHaveLock> {
   // #region Create resolvers to coordinate async lock lifecycle
   const { resolve: resolve1, promise: promise1 } = Promise.withResolvers<Lock | null>();
   const { resolve: resolve2, promise: promise2 } = Promise.withResolvers<void>();
@@ -117,18 +117,32 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Relesabl
 
   /**
    * Release the lock by resolving the promise returned to LockManager.
-   * Returns true if released successfully, false if already lost.
+   * Returns true if released successfully, or false if the lock has already been released or lost.
    */
   function release() {
     resolve2();
-    return promise3.then(() => true, () => false);
+    return promise3.then(returnTrue, returnFalse);
+  }
+
+  /**
+   * Helper to return true 
+   */
+  function returnTrue() {
+    return true;
+  }
+
+  /**
+   * Helper to return false
+   */
+  function returnFalse() {
+    return false;
   }
 
   /**
    * Implements AsyncDisposable support.
    * Allows automatic cleanup when used with the `using` keyword.
    */
-  async function asyncDispose() {
+  async function asyncDispose(): Promise<void> {
     await release();
     return undefined;
   }
