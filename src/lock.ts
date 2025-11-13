@@ -52,7 +52,7 @@ export function lock(name: string, options?: { locks?: LockManager }) {
  *   - `name`: lock name
  *   - `mode`: "exclusive" or "shared"
  *   - `release()`: release the lock
- *   - `[Symbol.asyncDispose]`: supports the `using` keyword for automatic disposal
+ *   - `[Symbol.asyncDispose]`: supports the `await using` keyword for automatic disposal
  *
  * If the lock cannot be obtained (e.g., `ifAvailable: true` case), 
  * a fallback object is returned with a dummy `release()` that does nothing.
@@ -62,21 +62,24 @@ export function lock(name: string, options?: { locks?: LockManager }) {
  */
 async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock | NotHaveLock> {
   // #region Create resolvers to coordinate async lock lifecycle
-  const { resolve: resolve1, promise: promise1 } = Promise.withResolvers<Lock | null>();
-  const { resolve: resolve2, promise: promise2 } = Promise.withResolvers<void>();
-  const { resolve: resolve3, promise: promise3, reject: reject3 } = Promise.withResolvers<void>();
+  // case1: called callback 
+  const { resolve: callbackResolve, promise: callbackPromise } = Promise.withResolvers<Lock | null>();
+  // case2: called release
+  const { resolve: releaseResolve, promise: releasePromise } = Promise.withResolvers<void>();
+  // case3: locks.request() result
+  const { resolve: requestResolve, promise: requestPromise, reject: requestReject } = Promise.withResolvers<void>();
   // #endregion
 
   // Request the lock using LockManager API
   (options
     ? this.locks.request(this.name, options, callback)
     : this.locks.request(this.name, callback))
-    .then(resolve3, reject3);
+    .then(requestResolve, requestReject);
 
   // Wait for either successful acquisition or rejection
   const result = await Promise.race([
-    promise1,
-    promise3
+    callbackPromise,
+    requestPromise
       .then(
         () => null,
         reason => ({ reason })
@@ -87,11 +90,12 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Releasab
   if (result && "reason" in result) throw result.reason;
 
   // Wait for the callback to resolve with the actual lock
-  const lock = await promise1;
+  const lock = await callbackPromise;
 
   // Case: lock not acquired (ifAvailable: true)
   if (!lock) {
-    resolve2();
+    releaseResolve();
+    requestResolve();
     return {
       release: notHaveLockRelease,
       [Symbol.asyncDispose]: noop,
@@ -111,8 +115,8 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Releasab
    * Returns a promise that resolves when the lock is released.
    */
   function callback(lock: Lock | null) {
-    resolve1(lock);
-    return promise2;
+    callbackResolve(lock);
+    return releasePromise;
   }
 
   /**
@@ -120,22 +124,8 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Releasab
    * Returns true if released successfully, or false if the lock has already been released or lost.
    */
   function release() {
-    resolve2();
-    return promise3.then(returnTrue, returnFalse);
-  }
-
-  /**
-   * Helper to return true 
-   */
-  function returnTrue() {
-    return true;
-  }
-
-  /**
-   * Helper to return false
-   */
-  function returnFalse() {
-    return false;
+    releaseResolve();
+    return requestPromise.then(returnTrue, returnFalse);
   }
 
   /**
@@ -146,6 +136,20 @@ async function request(this: InnerLock, options?: LockOptions): Promise<Releasab
     await release();
     return undefined;
   }
+}
+
+/**
+ * Helper to return true 
+ */
+function returnTrue() {
+  return true;
+}
+
+/**
+ * Helper to return false
+ */
+function returnFalse() {
+  return false;
 }
 
 /**
