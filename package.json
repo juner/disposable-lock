@@ -1,6 +1,6 @@
 {
   "name": "disposable-lock",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A disposable lock controller that wraps navigator.locks",
   "type": "module",
   "main": "./index.js",
@@ -20,7 +20,7 @@
     "test:watch": "vitest watch --coverage",
     "test": "vitest run --coverage --coverage.reporter=cobertura --coverage.reporter=text",
     "lint": "npx --node-options='--experimental-strip-types' eslint --flag unstable_native_nodejs_ts_config",
-    "build": "vite build && tsc --project tsconfig.build.json && cpx ./package.json dist && cpx README.md dist && cpx LICENSE dist"
+    "build": "vite build && tsc --project tsconfig.build.json && cpx ./package.json dist && cpx README.md dist && cpx LICENSE dist && cpx CHANGELOG.md dist"
   },
   "repository": {
     "type": "git",
@@ -38,9 +38,9 @@
     "node": "^24.x"
   },
   "bugs": {
-    "url": "https://github.com/juner/json-seq-stream/issues"
+    "url": "https://github.com/juner/disposable-lock/issues"
   },
-  "homepage": "https://github.com/juner/json-seq-stream#readme",
+  "homepage": "https://github.com/juner/disposable-lock#readme",
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@eslint/json": "^0.14.0",
