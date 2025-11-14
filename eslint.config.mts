@@ -33,12 +33,19 @@ export default defineConfig([
       "@stylistic/quotes": [`error`, "double", { "allowTemplateLiterals": "always" }],
     }
   },
-  { files: [`**/*.json`], ignores: [`**/tsconfig.json`, `package-lock.json`], plugins: { json }, language: `json/json`, extends: [`json/recommended`] },
+  { files: [`**/*.json`], ignores: [`**/tsconfig.json`, `package-lock.json`,`**/.vscode/*.json`], plugins: { json }, language: `json/json`, extends: [`json/recommended`] },
   {
     files: [
       `**/tsconfig.json`,
-      `**/*.code-workspace`
-    ], plugins: { json }, language: `json/jsonc`, extends: [`json/recommended`]
+      `**/*.code-workspace`,
+      `**/.vscode/*.json`,
+    ], 
+    plugins: {json},
+    language: "json/jsonc", 
+    languageOptions: {
+      allowTrailingCommas: true,
+    },
+    extends: ["json/recommended"],
   },
   { files: [`**/*.md`], plugins: { markdown }, language: `markdown/gfm`, extends: [`markdown/recommended`] },
 ]);

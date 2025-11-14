@@ -1,9 +1,9 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
     "settings": {
         "eslint.useFlatConfig": true,
         "editor.formatOnSave": false,
@@ -21,6 +21,11 @@
         },
         "[jsonc]": {
             "editor.tabSize": 2
+        },
+        "files.associations": {
+            "*.esproj": "xml",
+            "*.code-workspace": "jsonc",
+            ".vscode/*.json": "jsonc",
         },
         "explorer.fileNesting.enabled": true,
         "explorer.fileNesting.patterns": {
