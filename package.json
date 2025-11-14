@@ -20,7 +20,8 @@
     "test:watch": "vitest watch --coverage",
     "test": "vitest run --coverage --coverage.reporter=cobertura --coverage.reporter=text",
     "lint": "npx --node-options='--experimental-strip-types' eslint --flag unstable_native_nodejs_ts_config",
-    "build": "vite build && tsc --project tsconfig.build.json && node copy.ts -- -o dist -f ./package.json -f ./README.md -f ./LICENSE -f ./CHANGELOG.md"
+    "build": "vite build && tsc --project tsconfig.build.json && node utils/copy.ts -- -o dist -f ./package.json -f ./README.md -f ./LICENSE -f ./CHANGELOG.md",
+    "clean": "node utils/remove.ts -- -f ./dist -f ./TestResults"
   },
   "repository": {
     "type": "git",
