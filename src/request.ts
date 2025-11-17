@@ -14,7 +14,9 @@ import type { InnerLock, ReleasableLock } from "./types/index.ts";
  * @param options - LockOptions (mode, ifAvailable, steal, signal, etc.)
  * @returns A promise that resolves to either a ReleasableLock or a NotHaveLock.
  */
-export async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock|null> {
+export async function request(this: InnerLock, options: Omit<LockOptions, "ifAvailable"> & { ifAvailable: true }): Promise<ReleasableLock | null>;
+export async function request(this: InnerLock, options?: Omit<LockOptions, "ifAvailable"> & { ifAvailable?: false }): Promise<ReleasableLock>;
+export async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock | null> {
   // #region Create resolvers to coordinate async lock lifecycle
 
   // case1: called callback 
