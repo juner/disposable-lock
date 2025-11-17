@@ -37,7 +37,7 @@ async function main() {
   // Request a lock
   const acquired = await request({ mode: "exclusive" });
 
-  if (acquired.name) {
+  if (acquired) {
     console.log(`✅ Lock acquired: ${acquired.name}`);
 
     // Do something critical
@@ -62,7 +62,12 @@ async function autoRelease() {
   // Automatically releases the lock when the block ends
   await using acquired = await cacheLock.request();
 
-  console.log("Inside critical section...");
+  if (acquired) {
+    // Do something critical
+    await doSomething();
+  } else {
+    console.warn("⚠️ Lock was not available");
+  }
 }
 ```
 
@@ -76,7 +81,7 @@ Returns an object with:
 
 | Method | Description
 | - | -
-| `request(options?: LockOptions)` | Request a lock. Returns a `ReleasableLock` or a `NotHaveLock`.
+| `request(options?: LockOptions)` | Request a lock. Returns a `ReleasableLock` or a null.
 | `query()` | Query the current state (held and pending locks) for this name.
 
 Throws if `navigator.locks` is unavailable and no custom `LockManager` is provided.
@@ -93,16 +98,6 @@ Represents a successfully acquired lock.
 | `mode` | `"exclusive"` \| `"shared"` | Lock mode
 | `release()` | `() => Promise<boolean>` | Releases the lock
 | `[Symbol.asyncDispose]()` | `() => Promise<void>` | Enables await using syntax
-
-### `NotHaveLock`
-
-Returned when the lock cannot be obtained (for example, when using `{ ifAvailable: true }`).
-
-| Property / Method | Type | Description
-| `name` | `undefined` | —
-| `mode` | `undefined` | —
-| `release()` | `() => Promise<false>` | No-op release
-| `[Symbol.asyncDispose]()` | `() => Promise<void>` | No-op
 
 ## Querying lock state
 

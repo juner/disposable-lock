@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.0.0] - 2025-11-17
+
+### Changed
+- `lock(name).request()` now returns `Promise<ReleasableLock | null>` instead of `Promise<ReleasableLock | NotHaveLock>`.
+- When a lock cannot be acquired (e.g., `ifAvailable: true`), `null` is returned instead of a dummy object.
+- Ensures compatibility with `await using` and AsyncDisposable patterns.
+
+---
+
 ## [1.0.1] - 2025-11-14
 
 ### Fixed
@@ -28,5 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+[2.0.0]: https://github.com/juner/disposable-lock/releases/tag/v2.0.0
 [1.0.1]: https://github.com/juner/disposable-lock/releases/tag/v1.0.1  
 [1.0.0]: https://github.com/juner/disposable-lock/releases/tag/v1.0.0
