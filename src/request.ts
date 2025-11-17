@@ -1,4 +1,4 @@
-import type { InnerLock, ReleasableLock, NotHaveLock } from "./types/index.ts";
+import type { InnerLock, ReleasableLock } from "./types/index.ts";
 
 /**
  * Requests a lock with the given name and options.
@@ -14,7 +14,7 @@ import type { InnerLock, ReleasableLock, NotHaveLock } from "./types/index.ts";
  * @param options - LockOptions (mode, ifAvailable, steal, signal, etc.)
  * @returns A promise that resolves to either a ReleasableLock or a NotHaveLock.
  */
-export async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock | NotHaveLock> {
+export async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock|null> {
   // #region Create resolvers to coordinate async lock lifecycle
 
   // case1: called callback 
@@ -54,10 +54,7 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   if (!lock) {
     releaseResolve();
     requestResolve();
-    return {
-      release: notHaveLockRelease,
-      [Symbol.asyncDispose]: noop,
-    };
+    return null;
   }
 
   // Case: lock successfully acquired
@@ -107,18 +104,4 @@ export function returnTrue() {
  */
 export function returnFalse() {
   return false;
-}
-
-/**
- * Dummy release function for "not acquired" locks.
- */
-export function notHaveLockRelease(): Promise<false> {
-  return Promise.resolve(false);
-}
-
-/**
- * No-op async function.
- */
-export function noop() {
-  return Promise.resolve();
 }
