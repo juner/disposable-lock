@@ -31,22 +31,25 @@ pnpm add disposable-lock
 import { lock } from "disposable-lock";
 
 async function main() {
-  // Create a lock handler
   const { request } = lock("user-data");
 
-  // Request a lock
+  // --- Standard lock acquisition ---
   const acquired = await request({ mode: "exclusive" });
 
   if (acquired) {
     console.log(`✅ Lock acquired: ${acquired.name}`);
-
-    // Do something critical
     await doSomething();
-
-    // Release explicitly
     await acquired.release();
+  }
+
+  // --- ifAvailable: true ---
+  const maybeLock = await request({ ifAvailable: true });
+  if (maybeLock) {
+    console.log(`✅ Lock acquired (ifAvailable): ${maybeLock.name}`);
+    await doSomething();
+    await maybeLock.release();
   } else {
-    console.warn("⚠️ Lock was not available");
+    console.log("⚠️ Lock not available (ifAvailable: true), skipping critical section");
   }
 }
 ```
@@ -59,21 +62,33 @@ import { lock } from "disposable-lock";
 async function autoRelease() {
   const cacheLock = lock("cache-update");
 
-  // Automatically releases the lock when the block ends
+  // --- Standard await using ---
   await using acquired = await cacheLock.request();
-
   if (acquired) {
-    // Do something critical
+    console.log("Lock acquired, performing critical section...");
+    await doSomething();
+  }
+
+  // --- await using with ifAvailable: true ---
+  await using maybeLock = await cacheLock.request({ ifAvailable: true });
+  if (maybeLock) {
+    console.log("Lock acquired (ifAvailable), performing critical section...");
     await doSomething();
   } else {
-    console.warn("⚠️ Lock was not available");
+    console.log("Lock not available (ifAvailable: true), safe to skip");
   }
 }
 ```
 
+### Key Points
+
+- `request()` returns a `ReleasableLock` when successful, or `null` if the lock could not be obtained  
+- Wrapping with `await using` ensures automatic release at the end of the block  
+- `ifAvailable: true` attempts to acquire the lock but immediately returns `null` if unavailable
+
 ## API
 
-`lock(name: string, options?: { locks?: LockManager })`
+### `lock(name: string, options?: { locks?: LockManager })`
 
 Creates a lock handler bound to the given `name`.
 
