@@ -1,6 +1,6 @@
-import type { InnerLock } from "./types/index.ts";
+import type { InnerLock, ReleasableLock } from "./types/index.ts";
 import { query } from "./query.js";
-import { request } from "./request.js";
+import { request as originalRequest } from "./request.js";
 
 /**
  * Creates a simple lock handler for the specified `name`.
@@ -22,8 +22,12 @@ export function lock(name: string, options?: { locks?: LockManager }) {
     throw new Error("navigator.locks is not found. required options.locks argument.");
   }
   const thisArgs: InnerLock = { locks, name };
+  const request = originalRequest.bind(thisArgs) as {
+    (options: Omit<LockOptions, "ifAvailable"> & { ifAvailable: true }): Promise<ReleasableLock | null>;
+    (options?: Omit<LockOptions, "ifAvailable"> & { ifAvailable?: false }): Promise<ReleasableLock>;
+  };
   return {
-    request: request.bind(thisArgs),
+    request,
     query: query.bind(thisArgs),
   };
 }
