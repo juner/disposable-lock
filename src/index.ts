@@ -1,3 +1,3 @@
 import "./requiredAsyncDispose.ts";
 export * from "./lock.ts";
-export type { NotHaveLock, ReleasableLock } from "./types/index.ts";
+export type { ReleasableLock } from "./types/index.ts";

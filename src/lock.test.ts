@@ -12,6 +12,7 @@ describe("simple use", () => {
 
       {
         await using l = await request();
+        expect(l).toBeDefined();
         expect(l.name).toEqual(name);
         expect(l.mode).toEqual("exclusive");
         expect(l.release).instanceOf(Function);
@@ -43,6 +44,7 @@ describe("simple use", () => {
         await using lock1 = await request({
           mode: "exclusive",
         });
+        expect(lock1).toBeDefined();
         expect(counter++).toEqual(0);
         await expect(query()).resolves.toEqual({
           held: [
@@ -77,6 +79,7 @@ describe("simple use", () => {
         lock2Wait.finally(() => expect(counter++).toEqual(2));
         await lock1.release();
         await using lock2 = await lock2Wait;
+        expect(lock2).toBeDefined();
         expect(lock2.name).toBeDefined();
         expect(counter++).toEqual(3);
       }
@@ -94,10 +97,12 @@ describe("simple use", () => {
         await using lock1 = await request({
           mode: "shared",
         });
+        expect(lock1).toBeDefined();
         await expect(query()).resolves.toHaveProperty("held");
         await using lock2 = await request({
           mode: "shared",
         });
+        expect(lock2).toBeDefined();
         expect(lock2.name).toBe(name);
         const lock3Wait = request({
           mode: "exclusive",
@@ -137,6 +142,7 @@ describe("simple use", () => {
           pending: undefined,
         });
         await using lock3 = await lock3Wait;
+        expect(lock3).toBeDefined();
         expect(lock3.name).toBe(name);
         await expect(query()).resolves.toEqual({
           held: [
@@ -174,11 +180,7 @@ describe("simple use", () => {
         await using lock2 = await request({
           ifAvailable: true
         });
-        expect(lock2.name).toBeUndefined();
-        expect(lock2.mode).toBeUndefined();
-        expect(lock2.release).instanceOf(Function);
-        expect(lock2[Symbol.asyncDispose]).instanceOf(Function);
-        await expect(lock2.release()).resolves.toBe(false);
+        expect(lock2).toBeNull();
       }
     });
   }
@@ -188,14 +190,18 @@ describe("simple use", () => {
       const { request } = lock(name);
       {
         await using lock1 = await request();
+        expect(lock1).toBeDefined();
         const lock2Wait = request();
         await using lock3 = await request({
           steal: true,
         });
+        expect(lock3).toBeDefined();
         expect(lock3.name).toBe(name);
         await expect(lock1.release()).resolves.toBe(false);
         await expect(lock3.release()).resolves.toBe(true);
         await using lock2 = await lock2Wait;
+        expect(lock2).toBeDefined();
+        if (!lock2) return;
         expect(lock2.name).toBe(name);
       }
     });
