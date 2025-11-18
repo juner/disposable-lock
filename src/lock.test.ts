@@ -167,7 +167,7 @@ describe("simple use", () => {
         await using _ = await request();
         const lock2Wait = request({ signal });
         controller.abort();
-        await expect(lock2Wait).rejects.toThrow("This operation was aborted");
+        await expect(lock2Wait).rejects.toThrow(new DOMException("This operation was aborted", "AbortError"));
       }
     });
   }
@@ -206,6 +206,19 @@ describe("simple use", () => {
       }
     });
   }
+  {
+    const name = "steal:true and ifAvailable:true";
+    test.concurrent("steal:true and ifAvailable:true", async ({ expect }) => {
+      const { request } = lock(name);
+      {
+        const lockWait = request({
+          ifAvailable: true,
+          steal: true,
+        });
+        expect(lockWait).rejects.toThrow(new DOMException("ifAvailable and steal are mutually exclusive", "NotSupportedError"));
+      }
+    });
+  }
 });
 describe("hard error pattern", () => {
   const name = "not found navigator.locks";
@@ -216,7 +229,7 @@ describe("hard error pattern", () => {
       value: undefined,
     });
     try {
-      expect(() => lock(name)).toThrow("navigator.locks is not found. required options.locks argument.");
+      expect(() => lock(name)).toThrow(new Error("navigator.locks is not found. required options.locks argument."));
 
       const { request, query } = lock(name, { locks });
       {
