@@ -169,6 +169,14 @@ describe("simple use", () => {
         controller.abort();
         await expect(lock2Wait).rejects.toThrow(new DOMException("This operation was aborted", "AbortError"));
       }
+      // `signal` only affects the lock acquisition and does not affect the release.
+      {
+        const controller = new AbortController();
+        const signal = controller.signal;
+        await using lock1 = await request({ signal });
+        controller.abort();
+        await expect(lock1.release()).resolves.toBe(true);
+      }
     });
   }
   {
