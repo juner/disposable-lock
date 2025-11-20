@@ -128,8 +128,8 @@ describe("simple use", () => {
             }
           ],
         });
-        await expect(lock1.release()).resolves.toBe(true);
-        await expect(lock2.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBeUndefined();
+        await expect(lock2.release()).resolves.toBeUndefined();
 
         await expect(query()).resolves.toEqual({
           held: [
@@ -167,7 +167,7 @@ describe("simple use", () => {
         await using _ = await request();
         const lock2Wait = request({ signal });
         controller.abort();
-        await expect(lock2Wait).rejects.toThrow(new DOMException("This operation was aborted", "AbortError"));
+        await expect(lock2Wait).rejects.toThrow(makeAbortError());
       }
       // `signal` only affects the lock acquisition and does not affect the release.
       {
@@ -175,7 +175,7 @@ describe("simple use", () => {
         const signal = controller.signal;
         await using lock1 = await request({ signal });
         controller.abort();
-        await expect(lock1.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBeUndefined();
       }
     });
   }
@@ -205,8 +205,8 @@ describe("simple use", () => {
         });
         expect(lock3).toBeDefined();
         expect(lock3.name).toBe(name);
-        await expect(lock1.release()).resolves.toBe(false);
-        await expect(lock3.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBeUndefined();
+        await expect(lock3.release()).resolves.toBeUndefined();
         await using lock2 = await lock2Wait;
         expect(lock2).toBeDefined();
         if (!lock2) return;
@@ -223,7 +223,7 @@ describe("simple use", () => {
           ifAvailable: true,
           steal: true,
         });
-        expect(lockWait).rejects.toThrow(new DOMException("ifAvailable and steal are mutually exclusive", "NotSupportedError"));
+        await expect(lockWait).rejects.toThrow(makeNotSupportedError("ifAvailable and steal are mutually exclusive"));
       }
     });
   }
@@ -265,3 +265,18 @@ describe("hard error pattern", () => {
     }
   });
 });
+
+/**
+ * make NotSupportedError
+ * @param message 
+ */
+function makeNotSupportedError(message: string) {
+  return new DOMException(message, "NotSupportedError");
+}
+
+/**
+ * make AbortError
+ */
+function makeAbortError() {
+  return new DOMException("This operation was aborted", "AbortError");
+}
