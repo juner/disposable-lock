@@ -167,7 +167,7 @@ describe("simple use", () => {
         await using _ = await request();
         const lock2Wait = request({ signal });
         controller.abort();
-        await expect(lock2Wait).rejects.toThrow(makeAbortError());
+        await expect(lock2Wait).rejects.toThrow(new DOMException("This operation was aborted", "AbortError"));
       }
       // `signal` only affects the lock acquisition and does not affect the release.
       {
@@ -223,7 +223,7 @@ describe("simple use", () => {
           ifAvailable: true,
           steal: true,
         });
-        await expect(lockWait).rejects.toThrow(makeNotSupportedError("ifAvailable and steal are mutually exclusive"));
+        await expect(lockWait).rejects.toThrow(new DOMException("ifAvailable and steal are mutually exclusive", "NotSupportedError"));
       }
     });
   }
@@ -265,18 +265,3 @@ describe("hard error pattern", () => {
     }
   });
 });
-
-/**
- * make NotSupportedError
- * @param message 
- */
-function makeNotSupportedError(message: string) {
-  return new DOMException(message, "NotSupportedError");
-}
-
-/**
- * make AbortError
- */
-function makeAbortError() {
-  return new DOMException("This operation was aborted", "AbortError");
-}
