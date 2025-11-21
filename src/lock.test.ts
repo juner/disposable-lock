@@ -286,6 +286,12 @@ describe("hard error pattern", () => {
   });
 });
 
+/**
+ * Promise base setTimeout with abort signal
+ * @param ms 
+ * @param options 
+ * @returns 
+ */
 async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
   const { resolve, promise } = Promise.withResolvers<void>();
   const clear = setTimeout(resolve, ms);
@@ -305,6 +311,11 @@ async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
   }
 }
 
+/**
+ * Handle unhandledRejection event and return disposable to off the event.
+ * @param onUnhandledRejection 
+ * @returns 
+ */
 function unhandleRejection(onUnhandledRejection?: (reason: unknown) => void) {
   onUnhandledRejection ??= () => undefined;
   process.on("unhandledRejection", onUnhandledRejection);
