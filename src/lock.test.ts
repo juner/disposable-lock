@@ -1,11 +1,17 @@
 import { describe, test } from "vitest";
 import { lock } from "./index.js";
-describe("simple use", ({ beforeAll, afterAll }) => {
-  let handle: Disposable | undefined;
-  beforeAll(() => handle = unhandleRejection((reason) => console.error("unhandledRejection:", reason)));
-  afterAll(() => {
+describe("simple use", ({ beforeEach, afterEach }) => {
+  const handles = new Map<string, Disposable>();
+  beforeEach(({ task: { id } }) => {
+    handles.set(id, unhandleRejection(callback));
+  });
+  afterEach(({ task: { id } }) => {
+    const handle = handles.get(id);
     using _ = handle;
   });
+  function callback(reason: unknown) {
+    console.error("unhandledRejection:", reason);
+  }
   {
     const name = "simple lock";
     test.concurrent("simple lock", async ({ expect }) => {
@@ -170,13 +176,13 @@ describe("simple use", ({ beforeAll, afterAll }) => {
         const controller = new AbortController();
         const signal = controller.signal;
         await using _ = await request();
-        const lock2Wait = request({ signal });
+        const reasonWait = request({ signal }).catch(reason => reason);
         const abortWait = timeout().then(() => controller.abort());
-        await expect(Promise.all([lock2Wait, abortWait])).rejects.toThrowError(expect.objectContaining({
+        await Promise.allSettled([reasonWait, abortWait]);
+        await expect(reasonWait).resolves.toEqual(expect.objectContaining({
           message: "This operation was aborted",
           name: "AbortError",
         }));
-        await abortWait;
       }
       // `signal` only affects the lock acquisition and does not affect the release.
       {
