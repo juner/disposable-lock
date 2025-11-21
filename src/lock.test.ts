@@ -167,8 +167,7 @@ describe("simple use", () => {
         await using _ = await request();
         const lock2Wait = request({ signal });
         controller.abort();
-        const reason = await lock2Wait.catch(v => v);
-        expect(reason).toEqual(expect.objectContaining({
+        await expect(lock2Wait).rejects.toThrowError(expect.objectContaining({
           message: "This operation was aborted",
           name: "AbortError",
         }));
@@ -227,8 +226,7 @@ describe("simple use", () => {
           ifAvailable: true,
           steal: true,
         });
-        const reason = await lockWait.catch(v => v);
-        expect(reason).toEqual(expect.objectContaining({
+        await expect(lockWait).rejects.toThrowError(expect.objectContaining({
           message: "ifAvailable and steal are mutually exclusive",
           name: "NotSupportedError"
         }));
