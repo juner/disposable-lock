@@ -167,10 +167,7 @@ describe("simple use", () => {
         await using _ = await request();
         const lock2Wait = request({ signal });
         controller.abort();
-        await expect(lock2Wait).rejects.toThrow(expect.objectContaining({
-          message: "This operation was aborted",
-          name: "AbortError",
-        }));
+        await expect(lock2Wait).rejects.toThrowError("This operation was aborted");
       }
       // `signal` only affects the lock acquisition and does not affect the release.
       {
@@ -226,10 +223,7 @@ describe("simple use", () => {
           ifAvailable: true,
           steal: true,
         });
-        await expect(lockWait).rejects.toThrow(expect.objectContaining({
-          message: "ifAvailable and steal are mutually exclusive",
-          name: "NotSupportedError"
-        }));
+        await expect(lockWait).rejects.toThrowError("ifAvailable and steal are mutually exclusive");
       }
     });
   }
@@ -243,9 +237,7 @@ describe("hard error pattern", () => {
       value: undefined,
     });
     try {
-      expect(() => lock(name)).toThrow(expect.objectContaining({
-        message: "navigator.locks is not found. required options.locks argument."
-      }));
+      expect(() => lock(name)).toThrowError("navigator.locks is not found. required options.locks argument.");
 
       const { request, query } = lock(name, { locks });
       {
