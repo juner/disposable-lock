@@ -25,16 +25,12 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   // case2: called release
   const { resolve: releaseResolve, promise: releasePromise } = Promise.withResolvers<void>();
 
-  // case3: LockManager.request() result
-  const { resolve: requestResolve, promise: requestPromise, reject: requestReject } = Promise.withResolvers<void>();
-
   // #endregion
 
   // Request the lock using LockManager API
-  (options
+  const requestPromise = (options
     ? this.locks.request(this.name, options, callback)
-    : this.locks.request(this.name, callback))
-    .then(requestResolve, requestReject);
+    : this.locks.request(this.name, callback));
   let resolved = false;
   requestPromise.finally(() => resolved = true);
   // Wait for either successful acquisition or rejection
@@ -56,7 +52,6 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   // Case: lock not acquired (ifAvailable: true)
   if (!lock) {
     releaseResolve();
-    requestResolve();
     return null;
   }
 
