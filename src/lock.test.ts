@@ -1,17 +1,8 @@
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
+import type { BeforeEachListener, AfterEachListener } from "@vitest/runner";
 import { lock } from "./index.js";
-describe("simple use", ({ beforeEach, afterEach }) => {
-  const handles = new Map<string, Disposable>();
-  beforeEach(({ task: { id } }) => {
-    handles.set(id, unhandleRejection(callback));
-  });
-  afterEach(({ task: { id } }) => {
-    const handle = handles.get(id);
-    using _ = handle;
-  });
-  function callback(reason: unknown) {
-    console.error("unhandledRejection:", reason);
-  }
+describe("simple use", (args) => {
+  useUnhandleRejectionLogging(args);
   {
     const name = "simple lock";
     test.concurrent("simple lock", async ({ expect }) => {
@@ -176,8 +167,13 @@ describe("simple use", ({ beforeEach, afterEach }) => {
         const controller = new AbortController();
         const signal = controller.signal;
         await using _ = await request();
-        const reasonWait = request({ signal }).catch(reason => reason);
-        const abortWait = timeout().then(() => controller.abort());
+        let reasonWait: Promise<unknown>;
+        let abortWait: Promise<void>;
+        {
+          await using _ = fakeTimeer();
+          reasonWait = request({ signal }).catch(reason => reason);
+          abortWait = timeout().then(() => controller.abort());
+        }
         await Promise.allSettled([reasonWait, abortWait]);
         await expect(reasonWait).resolves.toEqual(expect.objectContaining({
           message: "This operation was aborted",
@@ -246,7 +242,8 @@ describe("simple use", ({ beforeEach, afterEach }) => {
     });
   }
 });
-describe("hard error pattern", () => {
+describe("hard error pattern", (args) => {
+  useUnhandleRejectionLogging(args);
   const name = "not found navigator.locks";
   test("not found navigator.locks", async ({ expect }) => {
     const locks = (globalThis.navigator as unknown as { locks: LockManager }).locks;
@@ -316,7 +313,7 @@ async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
  * @param onUnhandledRejection 
  * @returns 
  */
-function unhandleRejection(onUnhandledRejection?: (reason: unknown) => void) {
+function unhandleRejection(onUnhandledRejection?: (reason: unknown, promise: Promise<unknown>) => void) {
   onUnhandledRejection ??= () => undefined;
   process.on("unhandledRejection", onUnhandledRejection);
   return {
@@ -324,5 +321,60 @@ function unhandleRejection(onUnhandledRejection?: (reason: unknown) => void) {
   };
   function off() {
     process.off("unhandledRejection", onUnhandledRejection!);
+  }
+}
+
+/**
+ * use fake timer and return async disposable to restore real timer.
+ * @returns 
+ */
+function fakeTimeer() {
+  vi.useFakeTimers();
+  return {
+    advanceTimersByTimeAsync,
+    runAllTimersAsync,
+    [Symbol.asyncDispose]: runAllTimersAsync,
+  };
+  async function advanceTimersByTimeAsync(time: number) {
+    await vi.advanceTimersByTimeAsync(time);
+  }
+  async function runAllTimersAsync() {
+    await vi.runAllTimersAsync();
+  }
+}
+
+/**
+ * describe unhandledRejection logging utility
+ * @param param0 
+ */
+function useUnhandleRejectionLogging({ beforeEach, afterEach }
+  : {
+    beforeEach: (fn: BeforeEachListener<object>, timeout?: number) => void,
+    afterEach: (fn: AfterEachListener<object>, timeout?: number) => void
+  }) {
+  type HandlerInstance = {
+    [Symbol.dispose]: () => void,
+    reasones?: unknown[] | undefined,
+  }
+  const handles = new Map<string, HandlerInstance>();
+  beforeEach(({ task: { id } }) => {
+    const instance = {} as HandlerInstance;
+    const disposable = unhandleRejection(callback.bind(instance));
+    (instance as { [Symbol.dispose]?: () => void })[Symbol.dispose] = disposable[Symbol.dispose].bind(disposable);
+
+    handles.set(id, instance);
+  });
+  afterEach(({ task: { id } }) => {
+    const instance = handles.get(id);
+    {
+      using _ = instance;
+    }
+    if (!(instance?.reasones)) return;
+    for (const reason of instance.reasones) {
+      console.error(reason);
+    }
+  });
+  function callback(this: HandlerInstance, reason: unknown) {
+    (this.reasones ??= []).push(reason);
   }
 }
