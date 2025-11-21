@@ -1,6 +1,11 @@
 import { describe, test } from "vitest";
 import { lock } from "./index.js";
-describe("simple use", () => {
+describe("simple use", ({beforeAll, afterAll}) => {
+  let handle:Disposable|undefined;
+  beforeAll(() => handle = unhandleRejection());
+  afterAll(() => {
+    using _ = handle;
+  });
   {
     const name = "simple lock";
     test.concurrent("simple lock", async ({ expect }) => {
@@ -156,7 +161,7 @@ describe("simple use", () => {
         });
       }
     });
-  }
+  } 
   {
     const name = "use signal";
     test.concurrent("use signal", async ({ expect }) => {
@@ -166,8 +171,8 @@ describe("simple use", () => {
         const signal = controller.signal;
         await using _ = await request();
         const lock2Wait = request({ signal });
-        controller.abort();
-        await expect(lock2Wait).rejects.toThrowError(expect.objectContaining({
+        const abortWait = timeout().then(() => controller.abort());
+        await expect(Promise.all([lock2Wait, abortWait])).rejects.toThrowError(expect.objectContaining({
           message: "This operation was aborted",
           name: "AbortError",
         }));
@@ -273,3 +278,18 @@ describe("hard error pattern", () => {
     }
   });
 });
+
+function timeout(ms?:number) {
+  return new Promise<void>(resolve => setTimeout(resolve, ms));
+}
+
+function unhandleRejection(onUnhandledRejection?: (reason: unknown) => void) {
+  onUnhandledRejection ??= () => undefined;
+  process.on("unhandledRejection", onUnhandledRejection);
+  return {
+    [Symbol.dispose]: off,
+  };
+  function off() {
+    process.off("unhandledRejection", onUnhandledRejection!);
+  }
+}
