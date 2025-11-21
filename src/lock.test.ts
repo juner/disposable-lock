@@ -286,8 +286,23 @@ describe("hard error pattern", () => {
   });
 });
 
-function timeout(ms?: number) {
-  return new Promise<void>(resolve => setTimeout(resolve, ms));
+async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
+  const { resolve, promise } = Promise.withResolvers<void>();
+  const clear = setTimeout(resolve, ms);
+  if (options?.signal) {
+    options.signal.addEventListener("abort", abort, { once: true });
+  }
+  try {
+    return await promise;
+  } finally {
+    if (options?.signal) {
+      options.signal.removeEventListener("abort", abort);
+    }
+  }
+  function abort() {
+    clearTimeout(clear);
+    resolve();
+  }
 }
 
 function unhandleRejection(onUnhandledRejection?: (reason: unknown) => void) {
