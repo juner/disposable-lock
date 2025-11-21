@@ -1,8 +1,8 @@
 import { describe, test } from "vitest";
 import { lock } from "./index.js";
-describe("simple use", ({beforeAll, afterAll}) => {
-  let handle:Disposable|undefined;
-  beforeAll(() => handle = unhandleRejection());
+describe("simple use", ({ beforeAll, afterAll }) => {
+  let handle: Disposable | undefined;
+  beforeAll(() => handle = unhandleRejection((reason) => console.error("unhandledRejection:", reason)));
   afterAll(() => {
     using _ = handle;
   });
@@ -161,7 +161,7 @@ describe("simple use", ({beforeAll, afterAll}) => {
         });
       }
     });
-  } 
+  }
   {
     const name = "use signal";
     test.concurrent("use signal", async ({ expect }) => {
@@ -176,6 +176,7 @@ describe("simple use", ({beforeAll, afterAll}) => {
           message: "This operation was aborted",
           name: "AbortError",
         }));
+        await abortWait;
       }
       // `signal` only affects the lock acquisition and does not affect the release.
       {
@@ -279,7 +280,7 @@ describe("hard error pattern", () => {
   });
 });
 
-function timeout(ms?:number) {
+function timeout(ms?: number) {
   return new Promise<void>(resolve => setTimeout(resolve, ms));
 }
 
