@@ -44,7 +44,10 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   ]);
 
   // If LockManager.request() was rejected, rethrow the error
-  if (result && "reason" in result) throw result.reason;
+  if (result && "reason" in result) {
+    // throw requestPromise
+    await requestPromise as unknown as Promise<never>;
+  }
 
   // Wait for the callback to resolve with the actual lock
   const lock = await callbackPromise;
@@ -52,6 +55,7 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   // Case: lock not acquired (ifAvailable: true)
   if (!lock) {
     releaseResolve();
+    await requestPromise;
     return null;
   }
 
@@ -67,9 +71,9 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
    * Called by LockManager once a lock is granted.
    * Returns a promise that resolves when the lock is released.
    */
-  function callback(lock: Lock | null) {
+  async function callback(lock: Lock | null) {
     callbackResolve(lock);
-    return releasePromise;
+    return await releasePromise;
   }
 
   /**
@@ -88,7 +92,7 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   async function asyncDispose(): Promise<void> {
     if (resolved) return;
     releaseResolve();
-    return requestPromise;
+    return await requestPromise;
   }
 }
 
