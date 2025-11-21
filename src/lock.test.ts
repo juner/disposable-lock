@@ -1,6 +1,8 @@
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
+import type { BeforeEachListener, AfterEachListener } from "@vitest/runner";
 import { lock } from "./index.js";
-describe("simple use", () => {
+describe("simple use", (args) => {
+  useUnhandleRejectionLogging(args);
   {
     const name = "simple lock";
     test.concurrent("simple lock", async ({ expect }) => {
@@ -128,8 +130,8 @@ describe("simple use", () => {
             }
           ],
         });
-        await expect(lock1.release()).resolves.toBe(true);
-        await expect(lock2.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBeUndefined();
+        await expect(lock2.release()).resolves.toBeUndefined();
 
         await expect(query()).resolves.toEqual({
           held: [
@@ -165,9 +167,18 @@ describe("simple use", () => {
         const controller = new AbortController();
         const signal = controller.signal;
         await using _ = await request();
-        const lock2Wait = request({ signal });
-        controller.abort();
-        await expect(lock2Wait).rejects.toThrow(new DOMException("This operation was aborted", "AbortError"));
+        let reasonWait: Promise<unknown>;
+        let abortWait: Promise<void>;
+        {
+          await using _ = fakeTimeer();
+          reasonWait = request({ signal }).catch(reason => reason);
+          abortWait = timeout().then(() => controller.abort());
+        }
+        await Promise.allSettled([reasonWait, abortWait]);
+        await expect(reasonWait).resolves.toEqual(expect.objectContaining({
+          message: "This operation was aborted",
+          name: "AbortError",
+        }));
       }
       // `signal` only affects the lock acquisition and does not affect the release.
       {
@@ -175,7 +186,7 @@ describe("simple use", () => {
         const signal = controller.signal;
         await using lock1 = await request({ signal });
         controller.abort();
-        await expect(lock1.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBeUndefined();
       }
     });
   }
@@ -205,8 +216,8 @@ describe("simple use", () => {
         });
         expect(lock3).toBeDefined();
         expect(lock3.name).toBe(name);
-        await expect(lock1.release()).resolves.toBe(false);
-        await expect(lock3.release()).resolves.toBe(true);
+        await expect(lock1.release()).resolves.toBeUndefined();
+        await expect(lock3.release()).resolves.toBeUndefined();
         await using lock2 = await lock2Wait;
         expect(lock2).toBeDefined();
         if (!lock2) return;
@@ -223,12 +234,16 @@ describe("simple use", () => {
           ifAvailable: true,
           steal: true,
         });
-        expect(lockWait).rejects.toThrow(new DOMException("ifAvailable and steal are mutually exclusive", "NotSupportedError"));
+        await expect(lockWait).rejects.toThrowError(expect.objectContaining({
+          message: "ifAvailable and steal are mutually exclusive",
+          name: "NotSupportedError"
+        }));
       }
     });
   }
 });
-describe("hard error pattern", () => {
+describe("hard error pattern", (args) => {
+  useUnhandleRejectionLogging(args);
   const name = "not found navigator.locks";
   test("not found navigator.locks", async ({ expect }) => {
     const locks = (globalThis.navigator as unknown as { locks: LockManager }).locks;
@@ -237,7 +252,9 @@ describe("hard error pattern", () => {
       value: undefined,
     });
     try {
-      expect(() => lock(name)).toThrow(new Error("navigator.locks is not found. required options.locks argument."));
+      expect(() => lock(name)).toThrowError(expect.objectContaining({
+        message: "navigator.locks is not found. required options.locks argument."
+      }));
 
       const { request, query } = lock(name, { locks });
       {
@@ -265,3 +282,99 @@ describe("hard error pattern", () => {
     }
   });
 });
+
+/**
+ * Promise base setTimeout with abort signal
+ * @param ms 
+ * @param options 
+ * @returns 
+ */
+async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
+  const { resolve, promise } = Promise.withResolvers<void>();
+  const clear = setTimeout(resolve, ms);
+  if (options?.signal) {
+    options.signal.addEventListener("abort", abort, { once: true });
+  }
+  try {
+    return await promise;
+  } finally {
+    if (options?.signal) {
+      options.signal.removeEventListener("abort", abort);
+    }
+  }
+  function abort() {
+    clearTimeout(clear);
+    resolve();
+  }
+}
+
+/**
+ * Handle unhandledRejection event and return disposable to off the event.
+ * @param onUnhandledRejection 
+ * @returns 
+ */
+function unhandleRejection(onUnhandledRejection?: (reason: unknown, promise: Promise<unknown>) => void) {
+  onUnhandledRejection ??= () => undefined;
+  process.on("unhandledRejection", onUnhandledRejection);
+  return {
+    [Symbol.dispose]: off,
+  };
+  function off() {
+    process.off("unhandledRejection", onUnhandledRejection!);
+  }
+}
+
+/**
+ * use fake timer and return async disposable to restore real timer.
+ * @returns 
+ */
+function fakeTimeer() {
+  vi.useFakeTimers();
+  return {
+    advanceTimersByTimeAsync,
+    runAllTimersAsync,
+    [Symbol.asyncDispose]: runAllTimersAsync,
+  };
+  async function advanceTimersByTimeAsync(time: number) {
+    await vi.advanceTimersByTimeAsync(time);
+  }
+  async function runAllTimersAsync() {
+    await vi.runAllTimersAsync();
+  }
+}
+
+/**
+ * describe unhandledRejection logging utility
+ * @param param0 
+ */
+function useUnhandleRejectionLogging({ beforeEach, afterEach }
+  : {
+    beforeEach: (fn: BeforeEachListener<object>, timeout?: number) => void,
+    afterEach: (fn: AfterEachListener<object>, timeout?: number) => void
+  }) {
+  type HandlerInstance = {
+    [Symbol.dispose]: () => void,
+    reasones?: unknown[] | undefined,
+  }
+  const handles = new Map<string, HandlerInstance>();
+  beforeEach(({ task: { id } }) => {
+    const instance = {} as HandlerInstance;
+    const disposable = unhandleRejection(callback.bind(instance));
+    (instance as { [Symbol.dispose]?: () => void })[Symbol.dispose] = disposable[Symbol.dispose].bind(disposable);
+
+    handles.set(id, instance);
+  });
+  afterEach(({ task: { id } }) => {
+    const instance = handles.get(id);
+    {
+      using _ = instance;
+    }
+    if (!(instance?.reasones)) return;
+    for (const reason of instance.reasones) {
+      console.error(reason);
+    }
+  });
+  function callback(this: HandlerInstance, reason: unknown) {
+    (this.reasones ??= []).push(reason);
+  }
+}

@@ -25,17 +25,14 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   // case2: called release
   const { resolve: releaseResolve, promise: releasePromise } = Promise.withResolvers<void>();
 
-  // case3: LockManager.request() result
-  const { resolve: requestResolve, promise: requestPromise, reject: requestReject } = Promise.withResolvers<void>();
-
   // #endregion
 
   // Request the lock using LockManager API
-  (options
+  const requestPromise = (options
     ? this.locks.request(this.name, options, callback)
-    : this.locks.request(this.name, callback))
-    .then(requestResolve, requestReject);
-
+    : this.locks.request(this.name, callback));
+  let resolved = false;
+  requestPromise.finally(() => resolved = true);
   // Wait for either successful acquisition or rejection
   const result = await Promise.race([
     callbackPromise,
@@ -47,7 +44,10 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   ]);
 
   // If LockManager.request() was rejected, rethrow the error
-  if (result && "reason" in result) throw result.reason;
+  if (result && "reason" in result) {
+    // throw requestPromise
+    await requestPromise as unknown as Promise<never>;
+  }
 
   // Wait for the callback to resolve with the actual lock
   const lock = await callbackPromise;
@@ -55,7 +55,7 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
   // Case: lock not acquired (ifAvailable: true)
   if (!lock) {
     releaseResolve();
-    requestResolve();
+    await requestPromise;
     return null;
   }
 
@@ -71,18 +71,18 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
    * Called by LockManager once a lock is granted.
    * Returns a promise that resolves when the lock is released.
    */
-  function callback(lock: Lock | null) {
+  async function callback(lock: Lock | null) {
     callbackResolve(lock);
-    return releasePromise;
+    return await releasePromise;
   }
 
   /**
    * Release the lock by resolving the promise returned to LockManager.
    * Returns true if released successfully, or false if the lock has already been released or lost.
    */
-  function release() {
+  async function release() {
     releaseResolve();
-    return requestPromise.then(returnTrue, returnFalse);
+    await requestPromise.catch(returnUndefined);
   }
 
   /**
@@ -90,20 +90,12 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
    * Allows automatic cleanup when used with the `using` keyword.
    */
   async function asyncDispose(): Promise<void> {
-    await release();
+    if (resolved) return;
+    releaseResolve();
+    return await requestPromise;
   }
 }
 
-/**
- * Helper to return true 
- */
-export function returnTrue() {
-  return true;
-}
-
-/**
- * Helper to return false
- */
-export function returnFalse() {
-  return false;
+export function returnUndefined() {
+  return undefined;
 }
