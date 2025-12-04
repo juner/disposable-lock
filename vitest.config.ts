@@ -9,7 +9,7 @@ export default defineConfig({
         ...coverageConfigDefaults.exclude,
         "src/requiredAsyncDispose.ts",
         "utils/**/*.ts",
-      ]
-    }
-  }
+      ],
+    },
+  },
 });

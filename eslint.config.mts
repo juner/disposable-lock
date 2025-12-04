@@ -6,22 +6,27 @@ import markdown from "@eslint/markdown";
 import { defineConfig } from "eslint/config";
 import stylistic from "@stylistic/eslint-plugin";
 
-
 export default defineConfig([
   {
     ignores: [
-      `dist/**.*`
-    ]
+      `dist/**.*`,
+    ],
   },
   { files: [`**/*.{js,mjs,cjs,ts,mts,cts}`], plugins: { js }, extends: [`js/recommended`] },
   { files: [`**/*.{js,mjs,cjs,ts,mts,cts}`], languageOptions: { globals: { ...globals.browser, ...globals.node } } },
-  tseslint.configs.recommended as unknown as Parameters<typeof defineConfig>,
   {
+    files: [`**/*.{js,mjs,cjs,ts,mts,cts}`],
     plugins: {
       "@stylistic": stylistic,
+      "tseslint": tseslint,
     },
+    extends: [
+      "@stylistic/recommended",
+      "tseslint/recommended",
+    ],
     rules: {
       "semi": [`error`],
+      "@stylistic/semi": ["error", "always"],
       "no-unused-vars": [`off`],
       "@typescript-eslint/no-unused-vars": [`error`, {
         argsIgnorePattern: `^_`,
@@ -30,18 +35,18 @@ export default defineConfig([
         destructuredArrayIgnorePattern: `^_`,
         varsIgnorePattern: `^_`,
       }],
-      "@stylistic/quotes": [`error`, "double", { "allowTemplateLiterals": "always" }],
-    }
+      "@stylistic/quotes": [`error`, "double", { allowTemplateLiterals: "always" }],
+    },
   },
-  { files: [`**/*.json`], ignores: [`**/tsconfig.json`, `package-lock.json`,`**/.vscode/*.json`], plugins: { json }, language: `json/json`, extends: [`json/recommended`] },
+  { files: [`**/*.json`], ignores: [`**/tsconfig.json`, `package-lock.json`, `**/.vscode/*.json`], plugins: { json }, language: `json/json`, extends: [`json/recommended`] },
   {
     files: [
       `**/tsconfig.json`,
       `**/*.code-workspace`,
       `**/.vscode/*.json`,
-    ], 
-    plugins: {json},
-    language: "json/jsonc", 
+    ],
+    plugins: { json },
+    language: "json/jsonc",
     languageOptions: {
       allowTrailingCommas: true,
     },

@@ -25,7 +25,7 @@ describe("simple use", (args) => {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
         });
       }
@@ -54,7 +54,7 @@ describe("simple use", (args) => {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
           pending: undefined,
         });
@@ -68,14 +68,14 @@ describe("simple use", (args) => {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
           pending: [
             {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
         });
         lock2Wait.finally(() => expect(counter++).toEqual(2));
@@ -120,14 +120,14 @@ describe("simple use", (args) => {
               clientId: expect.any(String),
               mode: "shared",
               name,
-            }
+            },
           ],
           pending: [
             {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
         });
         await expect(lock1.release()).resolves.toBeUndefined();
@@ -139,7 +139,7 @@ describe("simple use", (args) => {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
           pending: undefined,
         });
@@ -152,7 +152,7 @@ describe("simple use", (args) => {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
           pending: undefined,
         });
@@ -197,7 +197,7 @@ describe("simple use", (args) => {
       {
         await using _ = await request();
         await using lock2 = await request({
-          ifAvailable: true
+          ifAvailable: true,
         });
         expect(lock2).toBeNull();
       }
@@ -236,7 +236,7 @@ describe("simple use", (args) => {
         });
         await expect(lockWait).rejects.toThrowError(expect.objectContaining({
           message: "ifAvailable and steal are mutually exclusive",
-          name: "NotSupportedError"
+          name: "NotSupportedError",
         }));
       }
     });
@@ -253,7 +253,7 @@ describe("hard error pattern", (args) => {
     });
     try {
       expect(() => lock(name)).toThrowError(expect.objectContaining({
-        message: "navigator.locks is not found. required options.locks argument."
+        message: "navigator.locks is not found. required options.locks argument.",
       }));
 
       const { request, query } = lock(name, { locks });
@@ -265,7 +265,7 @@ describe("hard error pattern", (args) => {
               clientId: expect.any(String),
               mode: "exclusive",
               name,
-            }
+            },
           ],
           pending: undefined,
         });
@@ -274,7 +274,8 @@ describe("hard error pattern", (args) => {
         held: undefined,
         pending: undefined,
       });
-    } finally {
+    }
+    finally {
       Object.defineProperty(globalThis.navigator, "locks", {
         writable: true,
         value: locks,
@@ -285,9 +286,9 @@ describe("hard error pattern", (args) => {
 
 /**
  * Promise base setTimeout with abort signal
- * @param ms 
- * @param options 
- * @returns 
+ * @param ms
+ * @param options
+ * @returns
  */
 async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
   const { resolve, promise } = Promise.withResolvers<void>();
@@ -297,7 +298,8 @@ async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
   }
   try {
     return await promise;
-  } finally {
+  }
+  finally {
     if (options?.signal) {
       options.signal.removeEventListener("abort", abort);
     }
@@ -310,8 +312,8 @@ async function timeout(ms?: number, options?: { signal?: AbortSignal }) {
 
 /**
  * Handle unhandledRejection event and return disposable to off the event.
- * @param onUnhandledRejection 
- * @returns 
+ * @param onUnhandledRejection
+ * @returns
  */
 function unhandleRejection(onUnhandledRejection?: (reason: unknown, promise: Promise<unknown>) => void) {
   onUnhandledRejection ??= () => undefined;
@@ -326,7 +328,7 @@ function unhandleRejection(onUnhandledRejection?: (reason: unknown, promise: Pro
 
 /**
  * use fake timer and return async disposable to restore real timer.
- * @returns 
+ * @returns
  */
 function fakeTimeer() {
   vi.useFakeTimers();
@@ -345,17 +347,16 @@ function fakeTimeer() {
 
 /**
  * describe unhandledRejection logging utility
- * @param param0 
+ * @param param0
  */
-function useUnhandleRejectionLogging({ beforeEach, afterEach }
-  : {
-    beforeEach: (fn: BeforeEachListener<object>, timeout?: number) => void,
-    afterEach: (fn: AfterEachListener<object>, timeout?: number) => void
-  }) {
+function useUnhandleRejectionLogging({ beforeEach, afterEach }: {
+  beforeEach: (fn: BeforeEachListener<object>, timeout?: number) => void
+  afterEach: (fn: AfterEachListener<object>, timeout?: number) => void
+}) {
   type HandlerInstance = {
-    [Symbol.dispose]: () => void,
-    reasones?: unknown[] | undefined,
-  }
+    [Symbol.dispose]: () => void
+    reasones?: unknown[] | undefined
+  };
   const handles = new Map<string, HandlerInstance>();
   beforeEach(({ task: { id } }) => {
     const instance = {} as HandlerInstance;

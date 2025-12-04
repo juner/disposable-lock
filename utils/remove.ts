@@ -15,16 +15,16 @@ const parsed = util.parseArgs({
       short: "f",
       multiple: true,
     },
-  }
+  },
 });
 
-const {values: {file}} = parsed;
+const { values: { file } } = parsed;
 
 if (!file || file.length <= 0) {
   process.exit(0);
 }
 
-for(const f of file) {
+for (const f of file) {
   const exist = await fse.pathExists(f);
   if (!exist) continue;
   await fse.remove(f);

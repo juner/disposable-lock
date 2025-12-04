@@ -19,7 +19,7 @@ export async function request(this: InnerLock, options?: Omit<LockOptions, "ifAv
 export async function request(this: InnerLock, options?: LockOptions): Promise<ReleasableLock | null> {
   // #region Create resolvers to coordinate async lock lifecycle
 
-  // case1: called callback 
+  // case1: called callback
   const { resolve: callbackResolve, promise: callbackPromise } = Promise.withResolvers<Lock | null>();
 
   // case2: called release
@@ -39,7 +39,7 @@ export async function request(this: InnerLock, options?: LockOptions): Promise<R
     requestPromise
       .then(
         () => null,
-        reason => ({ reason })
+        reason => ({ reason }),
       ),
   ]);
 

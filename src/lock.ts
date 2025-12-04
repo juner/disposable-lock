@@ -23,8 +23,8 @@ export function lock(name: string, options?: { locks?: LockManager }) {
   }
   const thisArgs: InnerLock = { locks, name };
   const request = originalRequest.bind(thisArgs) as {
-    (options: Omit<LockOptions, "ifAvailable"> & { ifAvailable: true }): Promise<ReleasableLock | null>;
-    (options?: Omit<LockOptions, "ifAvailable"> & { ifAvailable?: false }): Promise<ReleasableLock>;
+    (options: Omit<LockOptions, "ifAvailable"> & { ifAvailable: true }): Promise<ReleasableLock | null>
+    (options?: Omit<LockOptions, "ifAvailable"> & { ifAvailable?: false }): Promise<ReleasableLock>
   };
   return {
     request,

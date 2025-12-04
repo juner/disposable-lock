@@ -6,6 +6,6 @@ export default defineConfig({
       entry: resolve(__dirname, "src/index.ts"),
       name: "index",
       fileName: "index",
-    }
-  }
+    },
+  },
 });
