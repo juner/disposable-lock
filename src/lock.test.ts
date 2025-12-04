@@ -171,11 +171,11 @@ describe("simple use", (args) => {
         let abortWait: Promise<void>;
         {
           await using _ = fakeTimeer();
-          reasonWait = request({ signal }).catch(reason => reason);
+          reasonWait = request({ signal });
           abortWait = timeout().then(() => controller.abort());
         }
         await Promise.allSettled([reasonWait, abortWait]);
-        await expect(reasonWait).resolves.toEqual(expect.objectContaining({
+        await expect(reasonWait).rejects.toThrowError(expect.objectContaining({
           message: "This operation was aborted",
           name: "AbortError",
         }));
