@@ -2,17 +2,21 @@
   "name": "disposable-lock",
   "version": "2.0.1",
   "description": "A disposable lock controller that wraps navigator.locks",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "type": "module",
-  "main": "./index.js",
+  "main": "./dist/index.js",
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "default": "./index.js"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "require": {
-        "types": "./index.d.ts",
-        "default": "./index.umd.cjs"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.umd.cjs"
       }
     }
   },
@@ -20,7 +24,7 @@
     "test:watch": "vitest watch --coverage",
     "test": "vitest run --coverage --coverage.reporter=cobertura --coverage.reporter=text",
     "lint": "npx --node-options='--experimental-strip-types' eslint --flag unstable_native_nodejs_ts_config",
-    "build": "vite build && tsc --project tsconfig.build.json && node utils/copy.ts -- -o dist -f ./package.json -f ./README.md -f ./LICENSE -f ./CHANGELOG.md",
+    "build": "vite build && tsc --project tsconfig.build.json",
     "clean": "node utils/remove.ts -- -f ./dist -f ./TestResults"
   },
   "repository": {
@@ -36,7 +40,7 @@
   "author": "juners",
   "license": "MIT",
   "engines": {
-    "node": "^24.x"
+    "node": ">=24.x"
   },
   "bugs": {
     "url": "https://github.com/juner/disposable-lock/issues"
