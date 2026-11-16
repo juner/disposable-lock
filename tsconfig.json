@@ -9,11 +9,9 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
-    /* Bundler mode */
     "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "moduleDetection": "force",
-    "emitDeclarationOnly": true,
     "declaration": true,
     /* Linting */
     "strict": true,
@@ -23,14 +21,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "verbatimModuleSyntax": true,
-    "sourceMap": true,
-    "sourceRoot": "./src",
     "noEmit": true
   },
   "include": [
     "src"
   ],
-  "exclude": [
-
-  ]
+  "exclude": []
 }

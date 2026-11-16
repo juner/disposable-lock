@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.0.2] - 2026-11-16
+
+### Changed
+
+- Simplified build output to pure ESM (`dist/index.js` and `dist/index.d.ts`) using `tsc` directly.
+- Consolidated source files into `src/index.ts` so internal `.d.ts` files are no longer exposed in `dist/`.
+- Relaxed `engines.node` requirement to `>=22.0.0`.
+
+### Fixed
+
+- Resolved `.ts` import extension issues in generated `.d.ts` files and `FalseESM` package exports resolution warnings.
+
+---
+
 ## [2.0.1] - 2025-11-18
 
 ### Fixed
@@ -51,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+[2.0.2]: https://github.com/juner/disposable-lock/releases/tag/v2.0.2
 [2.0.1]: https://github.com/juner/disposable-lock/releases/tag/v2.0.1
 [2.0.0]: https://github.com/juner/disposable-lock/releases/tag/v2.0.0
 [1.0.1]: https://github.com/juner/disposable-lock/releases/tag/v1.0.1  
