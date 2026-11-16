@@ -12,17 +12,17 @@ export default defineConfig([
       `dist/**/**.*`,
     ],
   },
-  { files: [`**/*.{js,mjs,cjs,ts,mts,cts}`], plugins: { js }, extends: [`js/recommended`] },
+  { files: [`**/*.{js,mjs,cjs,ts,mts,cts}`], plugins: { js }, extends: [js.configs.recommended] },
   { files: [`**/*.{js,mjs,cjs,ts,mts,cts}`], languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   {
     files: [`**/*.{js,mjs,cjs,ts,mts,cts}`],
     plugins: {
       "@stylistic": stylistic,
-      "tseslint": tseslint,
+      "@typescript-eslint": tseslint.plugin,
     },
     extends: [
-      "@stylistic/recommended",
-      "tseslint/recommended",
+      stylistic.configs.recommended,
+      tseslint.configs.recommended,
     ],
     rules: {
       "semi": [`error`],
@@ -50,7 +50,9 @@ export default defineConfig([
     languageOptions: {
       allowTrailingCommas: true,
     },
-    extends: ["json/recommended"],
+    extends: [
+      json.configs.recommended,
+    ],
   },
-  { files: [`**/*.md`], plugins: { markdown }, language: `markdown/gfm`, extends: [`markdown/recommended`] },
+  { files: [`**/*.md`], plugins: { markdown }, language: `markdown/gfm`, extends: [markdown.configs.recommended] },
 ]);
